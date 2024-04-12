@@ -378,12 +378,13 @@ void fen_to_chessboard(const char *fen, ChessGame *game) {
             fen++;
         } else if(*fen == ' ') {
             fen++;
-        } else if(*fen == 'b' || *fen == 'w') {
+        } else if((r == 7 && c == 8) && (*fen == 'b' || *fen == 'w')) {
             if(*fen == 'b') {
                 game->currentPlayer = BLACK_PLAYER;
             } else {
                 game->currentPlayer = WHITE_PLAYER;
             }
+            fen++;
         } else {
             board[r][c] = *fen;
             c++;
