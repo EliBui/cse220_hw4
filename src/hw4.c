@@ -326,7 +326,67 @@ void fen_to_chessboard(const char *fen, ChessGame *game) {
 int parse_move(const char *move, ChessMove *parsed_move) {
     (void)move;
     (void)parsed_move;
-    return -999;
+
+    int strLen = strlen(move);
+
+    if(strLen != 4 && strLen != 5) {
+        return PARSE_MOVE_INVALID_FORMAT;
+    }
+
+    char validFile[] = {'a','b','c','d','e','f','g','h'};
+    char validRank[] = {'1','2','3','4','5','6','7','8'};
+    char f1 = 'z', r1 = 'z';
+    char f2 = 'z', r2 = 'z';
+    for(int i = 0; i < 8; i++) {
+        if(move[0] == validFile[i]) {
+            f1 = move[0];
+        }
+        if(move[1] == validRank[i]) {
+            r1 = move[1];
+        }
+        if(move[2] == validFile[i]) {
+            f2 = move[2];
+        }
+        if(move[3] == validRank[i]) {
+            r2 = move[3];
+        }
+    }
+
+    if(f1 == 'z' || f2 == 'z') {
+        return PARSE_MOVE_INVALID_FORMAT;
+    }
+
+    if(r1 == 'z' || r2 == 'z') {
+        return PARSE_MOVE_OUT_OF_BOUNDS;
+    }
+
+    char start[3];
+    start[0] = f1;
+    start[1] = r1;
+    start[2] = '\0';
+
+    char end[4];
+    end[0] = f2;
+    end[1] = r2;
+
+    if(strLen == 5) {
+        if(move[3] != '8' && move[3] != '1') {
+            return PARSE_MOVE_INVALID_DESTINATION;
+        }
+
+        if(move[4] != 'q' && move[4] != 'r' && move[4] != 'b' && move[4] != 'n') {
+            return PARSE_MOVE_INVALID_PROMOTION;
+        }
+        end[2] = move[4];
+        end[3] = '\0';
+    } else {
+        end[2] = '\0';
+    }
+
+    strcpy(parsed_move->startSquare, start);
+    strcpy(parsed_move->endSquare, end);
+
+    return 0;
 }
 
 int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_move) {
