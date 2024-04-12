@@ -104,7 +104,7 @@ void chessboard_to_fen(char fen[], ChessGame *game) {
                 emptyCount++;
             } else {
                 if(emptyCount != 0) {
-                    *fen = emptyCount + '0';
+                    *fen = emptyCount + '0'; //adding the int to ascii of '0'
                     fen++;
                     emptyCount = 0;
                 }
@@ -356,8 +356,40 @@ bool is_valid_move(char piece, int src_row, int src_col, int dest_row, int dest_
 }
 
 void fen_to_chessboard(const char *fen, ChessGame *game) {
-    (void)fen;
-    (void)game;
+    // (void)fen;
+    // (void)game;
+
+    char (*board)[8] = game->chessboard;
+    int r = 0;
+    int c = 0;
+    int emptyCount;
+    while(*fen != '\0') {
+        if(isdigit(*fen) != 0) { //fen is a number
+            emptyCount = *fen - '0';
+            fen++;
+            while(emptyCount != 0) {
+                board[r][c] = '.';
+                emptyCount--;
+                c++;
+            }
+        } else if(*fen == '/') { //fen is not a number
+            r++;
+            c = 0; 
+            fen++;
+        } else if(*fen == ' ') {
+            fen++;
+        } else if(*fen == 'b' || *fen == 'w') {
+            if(*fen == 'b') {
+                game->currentPlayer = BLACK_PLAYER;
+            } else {
+                game->currentPlayer = WHITE_PLAYER;
+            }
+        } else {
+            board[r][c] = *fen;
+            c++;
+            fen++;
+        }
+    }
 }
 
 int parse_move(const char *move, ChessMove *parsed_move) {
