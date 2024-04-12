@@ -324,8 +324,8 @@ void fen_to_chessboard(const char *fen, ChessGame *game) {
 }
 
 int parse_move(const char *move, ChessMove *parsed_move) {
-    (void)move;
-    (void)parsed_move;
+    // (void)move;
+    // (void)parsed_move;
 
     int strLen = strlen(move);
 
@@ -389,12 +389,151 @@ int parse_move(const char *move, ChessMove *parsed_move) {
     return 0;
 }
 
+void getCoord(char *sq, int *row, int *col) {
+    switch(sq[0]) {
+        case 'a':
+            *col = 0;
+            break;
+        case 'b':
+            *col = 1;
+            break;
+        case 'c':
+            *col = 2;
+            break;
+        case 'd':
+            *col = 3;
+            break;
+        case 'e':
+            *col = 4;
+            break;
+        case 'f':
+            *col = 5;
+            break;
+        case 'g':
+            *col = 6;
+            break;
+        default:
+            *col = 7;
+    }
+
+    switch(sq[1]) {
+        case '8':
+            *row = 0;
+            break;
+        case '7':
+            *row = 1;
+            break;
+        case '6':
+            *row = 2;
+            break;
+        case '5':
+            *row = 3;
+            break;
+        case '4':
+            *row = 4;
+            break;
+        case '3':
+            *row = 5;
+            break;
+        case '2':
+            *row = 6;
+            break;
+        default:
+            *row = 7;
+    }
+}
+
 int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_move) {
-    (void)game;
-    (void)move;
-    (void)is_client;
-    (void)validate_move;
-    return -999;
+    // (void)game;
+    // (void)move;
+    // (void)is_client;
+    // (void)validate_move;
+
+    char (*board)[8] = game->chessboard;
+    char *startSq = move->startSquare;
+    char *endSq = move->endSquare;
+
+    int src_row;
+    int src_col;
+    getCoord(startSq, &src_row, &src_col);
+    char piece = board[src_row][src_col];
+
+    int dest_row;
+    int dest_col;
+    getCoord(endSq, &dest_row, &dest_col);
+    char capPiece = board[dest_row][dest_col];
+
+    if(validate_move) {
+        if((is_client && game->currentPlayer != WHITE_PLAYER) || (!is_client && game->currentPlayer != BLACK_PLAYER)) {
+            return MOVE_OUT_OF_TURN;
+        }
+
+        if(piece == '.') {
+            return MOVE_NOTHING;
+        }
+
+        if(is_client) {
+            if(piece == 'r' || piece == 'n' || piece == 'b' || piece == 'q'
+                || piece == 'k' || piece == 'p') {
+                return MOVE_WRONG_COLOR;
+            }
+        } else {
+            if(piece == 'R' || piece == 'N' || piece == 'B' || piece == 'Q'
+                || piece == 'K' || piece == 'P') {
+                return MOVE_WRONG_COLOR;
+            }
+        }
+
+        if(is_client) {
+            if(capPiece == 'R' || capPiece == 'N' || capPiece == 'B' || capPiece == 'Q'
+                || capPiece == 'K' || capPiece == 'P') {
+                return MOVE_SUS;
+            }
+        } else {
+            if(capPiece == 'r' || capPiece == 'n' || capPiece == 'b' || capPiece == 'q'
+                || capPiece == 'k' || capPiece == 'p') {
+                return MOVE_SUS;
+            }
+        }
+
+        if(strlen(endSq) == 3 && (piece != 'P' && piece != 'p')) {
+            return MOVE_NOT_A_PAWN;
+        }
+
+        if(strlen(endSq) == 2 && piece == 'P' && dest_row == 0) {
+            return MOVE_MISSING_PROMOTION;
+        } else if(strlen(endSq) == 2 && piece == 'p' && dest_row == 7) {
+            return MOVE_MISSING_PROMOTION;
+        }
+
+        if(is_valid_move(piece, src_row, src_col, dest_row, dest_col, game) == false) {
+            return MOVE_WRONG;
+        }
+    }
+
+    board[src_row][src_col] = '.';
+    if(strlen(endSq) == 3) {
+        if(is_client) {
+            piece = toupper(endSq[2]);
+        } else {
+            piece = endSq[2];
+        }
+    }
+    board[dest_row][dest_col] = piece;
+
+    game->moves[game->moveCount] = *move;
+    game->moveCount++;
+    if(capPiece != '.') {
+        game->capturedPieces[game->capturedCount] = capPiece;
+        game->capturedCount++;
+    }
+    if(game->currentPlayer == WHITE_PLAYER) {
+        game->currentPlayer = BLACK_PLAYER;
+    } else {
+        game->currentPlayer = WHITE_PLAYER;
+    }
+
+    return 0;
 }
 
 int send_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
