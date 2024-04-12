@@ -92,8 +92,45 @@ void initialize_game(ChessGame *game) {
 }
 
 void chessboard_to_fen(char fen[], ChessGame *game) {
-    (void)fen;
-    (void)game;
+    // (void)fen;
+    // (void)game;
+
+    char (*board)[8] = game->chessboard;    
+
+    int emptyCount = 0;
+    for(int r = 0; r < 8; r++) {
+        for(int c = 0; c < 8; c++) {
+            if(board[r][c] == '.') {
+                emptyCount++;
+            } else {
+                if(emptyCount != 0) {
+                    *fen = emptyCount + '0';
+                    fen++;
+                    emptyCount = 0;
+                }
+                *fen = board[r][c];
+                fen++;
+            }
+        }
+        if(emptyCount != 0) {
+            *fen = emptyCount + '0';
+            fen++;
+            emptyCount = 0;
+        }
+        if(r != 7) {
+            *fen = '/';
+            fen++;
+        }
+    }
+    *fen = ' ';
+    fen++;
+    if(game->currentPlayer == WHITE_PLAYER) {
+        *fen = 'w';
+    } else {
+        *fen = 'b';
+    }
+    fen++;
+    *fen = '\0';
 }
 
 bool is_valid_pawn_move(char piece, int src_row, int src_col, int dest_row, int dest_col, ChessGame *game) {
