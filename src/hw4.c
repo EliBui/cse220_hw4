@@ -606,20 +606,129 @@ int make_move(ChessGame *game, ChessMove *move, bool is_client, bool validate_mo
     return 0;
 }
 
+int extractStr(const char *message, char str[], int index, char endChar) {
+    int i = 0;
+    while(message[index] != endChar && message[index] != '\0') {
+        str[i] = message[index];
+        i++;
+        index++;
+    }
+    str[i] = '\0';
+    return index;
+}
+
 int send_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
-    (void)game;
-    (void)message;
-    (void)socketfd;
-    (void)is_client;
-    return -999;
+    // (void)game;
+    // (void)message;
+    // (void)socketfd;
+    // (void)is_client;
+
+    int msgLen = strlen(message);
+    char command[msgLen];
+    int index = 0;
+    index = extractStr(message, command, index, ' ');//get command from message
+    index++;
+
+    char arg1[msgLen];
+    char arg2[msgLen];
+    
+    if(strcmp(command, "/move") == 0) {
+        extractStr(message, arg1, index, '\0');//get arg1 from message
+        
+        ChessMove move;
+        if(parse_move(arg1, &move) == 0 && make_move(game, &move, is_client, true) == 0) {
+            send(socketfd, message, msgLen, 0);
+            return COMMAND_MOVE;
+        }
+    } else if(strcmp(command, "/forfeit") == 0) {
+        send(socketfd, message, msgLen, 0);
+        return COMMAND_FORFEIT;
+    } else if(strcmp(command, "/chessboard") == 0) {
+        send(socketfd, message, msgLen, 0);
+        return COMMAND_DISPLAY;
+    } else if(strcmp(command, "/import") == 0 && !is_client){
+        extractStr(message, arg1, index, '\0');
+
+        fen_to_chessboard(arg1, game);
+        send(socketfd, message, msgLen, 0);
+        return COMMAND_IMPORT;
+    } else if(strcmp(command, "/load") == 0) {
+        index = extractStr(message, arg1, index, ' ');
+
+        if(message[index] == '\0') { //no second arg for save_number
+            return COMMAND_ERROR;
+        }
+
+        index++;
+        extractStr(message, arg2, index, '\0');
+        int save_number = atoi(arg2);
+
+        if(load_game(game, arg1, "game_database.txt", save_number) == 0) {
+            send(socketfd, message, msgLen, 0);
+            return COMMAND_LOAD;
+        }
+    } else if(strcmp(command, "/save") == 0) {
+        extractStr(message, arg1, index, '\0');
+
+        if(save_game(game, arg1, "game_database.txt") == 0) {
+            send(socketfd, message, msgLen, 0);
+            return COMMAND_SAVE;
+        }
+    } else {
+        return COMMAND_UNKNOWN;
+    }
+
+    return COMMAND_ERROR;
 }
 
 int receive_command(ChessGame *game, const char *message, int socketfd, bool is_client) {
-    (void)game;
-    (void)message;
-    (void)socketfd;
-    (void)is_client;
-    return -999;
+    // (void)game;
+    // (void)message;
+    // (void)socketfd;
+    // (void)is_client;
+
+    int msgLen = strlen(message);
+    char command[msgLen];
+    int index = 0;
+    index = extractStr(message, command, index, ' ');//get command from message
+    index++;
+
+    char arg1[msgLen];
+    char arg2[msgLen];
+
+    if(strcmp(command, "/move") == 0) {
+        extractStr(message, arg1, index, '\0');
+        ChessMove move;
+        if(parse_move(arg1, &move) == 0 && make_move(game, &move, is_client, false) == 0) {
+            return COMMAND_MOVE;
+        }
+    } else if(strcmp(command, "/forfeit") == 0) {
+        close(socketfd);
+        return COMMAND_FORFEIT;
+    } else if(strcmp(command, "/import") == 0 && is_client == true) {
+        extractStr(message, arg1, index, '\0');
+
+        fen_to_chessboard(arg1, game);
+        return COMMAND_IMPORT;
+    } else if(strcmp(command, "/load") == 0) {
+        index = extractStr(message, arg1, index, ' ');
+        
+        if(message[index] == '\0') { //no second arg for save_number
+            return COMMAND_ERROR;
+        }
+
+        index++;
+        extractStr(message, arg2, index, '\0');
+        int save_number = atoi(arg2);
+
+        if(load_game(game, arg1, "game_database.txt", save_number) == 0) {
+            return COMMAND_LOAD;
+        }
+    } else {
+        return -1;
+    }
+
+    return COMMAND_ERROR;
 }
 
 int save_game(ChessGame *game, const char *username, const char *db_filename) {
