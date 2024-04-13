@@ -623,18 +623,86 @@ int receive_command(ChessGame *game, const char *message, int socketfd, bool is_
 }
 
 int save_game(ChessGame *game, const char *username, const char *db_filename) {
-    (void)game;
-    (void)username;
-    (void)db_filename;
-    return -999;
+    // (void)game;
+    // (void)username;
+    // (void)db_filename;
+
+    if(*username == '\0') {
+        return -1;
+    }
+
+    //check for spaces in username
+    const char *temp = username;
+    while(*temp != '\0') {
+        if(*temp == ' ') {
+            return -1;
+        }
+        temp++;
+    }
+
+    FILE *file = fopen(db_filename, "a");//append mode
+
+    if(file == NULL) {
+        return -1;
+    }
+
+    char fen[74];//enough space for 64 squares of the board, 7 '/', 1 ' ', 1 'b' or 'w', and 1 '\0'
+    chessboard_to_fen(fen, game);
+
+    if(fprintf(file, "%s%c%s%c", username, ':', fen, '\n') < 0) {
+        return -1;
+    }
+
+    fclose(file);
+
+    return 0;
 }
 
 int load_game(ChessGame *game, const char *username, const char *db_filename, int save_number) {
-    (void)game;
-    (void)username;
-    (void)db_filename;
-    (void)save_number;
-    return -999;
+    // (void)game;
+    // (void)username;
+    // (void)db_filename;
+    // (void)save_number;
+
+    if(save_number < 1) {
+        return -1;
+    }
+
+    FILE *file = fopen(db_filename, "r");
+    char line[BUFFER_SIZE];
+    
+    for(int i = 1; i <= save_number; i++) {
+        if(fgets(line, BUFFER_SIZE, file) == NULL) {
+            fclose(file);
+            return -1;//save_mnumber > num of line in the file
+        }
+    }
+    
+    char extractedUser[BUFFER_SIZE];
+    int index = 0;
+    while(line[index] != ':') {
+        extractedUser[index] = line[index];
+        index++;
+    }
+    extractedUser[index] = '\0';
+    index++;
+
+    if(strcmp(extractedUser, username) != 0) {
+        return -1;
+    }
+
+    char fen[74];
+    int fenIndex = 0;
+    while(line[index] != '\n') {
+        fen[fenIndex] = line[index];
+        fenIndex++;
+        index++;
+    }
+    fen[fenIndex] = '\0';
+
+    fen_to_chessboard(fen, game);
+
+    return 0;
 }
 
 void display_chessboard(ChessGame *game) {
