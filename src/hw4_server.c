@@ -51,6 +51,7 @@ int main() {
 
     while (1) {
         char buffer[BUFFER_SIZE];
+        memset(buffer, '\0', BUFFER_SIZE);
         int nbytes = read(connfd, buffer, BUFFER_SIZE);
         if(nbytes <= 0) {
             perror("[Server] read() failed.");
@@ -64,7 +65,7 @@ int main() {
             break;
         }
 
-        memset(buffer, '\0', strlen(buffer)+1);
+        memset(buffer, '\0', BUFFER_SIZE);
         int res;
 
         do {
@@ -81,7 +82,7 @@ int main() {
             // printf("terminating server\n");
             break;
         }
-        memset(buffer, '\0', strlen(buffer)+1);
+        memset(buffer, '\0', BUFFER_SIZE);
     }
 
     close(connfd);
