@@ -1,6 +1,7 @@
 #include "hw4.h"
 
 int main() {
+    ChessGame game;
     int listenfd, connfd;
     struct sockaddr_in address;
     int opt = 1;
@@ -47,9 +48,34 @@ int main() {
     INFO("Server accepted connection");
 
     while (1) {
-        // Fill this in
+        char buffer[BUFFER_SIZE];
+        int nbytes = read(connfd, buffer, BUFFER_SIZE);
+        if(nbytes <= 0) {
+            perror("[Server] read() failed.");
+            exit(EXIT_FAILURE);
+        }
+
+        if(receive_command(&game, buffer, connfd, WHITE_PLAYER) == COMMAND_FORFEIT) {
+            printf("terminating server\n");
+            break;
+        }
+
+        int res;
+
+        do {
+            printf("[Server] Enter a command: ");
+            fgets(buffer, BUFFER_SIZE, stdin);
+            buffer[strlen(buffer)-1] = '\0'; //remove the \n char at the end;
+            res = send_command(&game, buffer, connfd, WHITE_PLAYER);
+        } while(res == COMMAND_ERROR || res == COMMAND_UNKNOWN);
+
+        if(res == COMMAND_FORFEIT) {
+            printf("terminating server\n");
+            break;
+        }
     }
 
+    close(connfd);
     close(listenfd);
     return 0;
 }

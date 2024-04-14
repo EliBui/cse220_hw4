@@ -36,7 +36,31 @@ int main() {
     display_chessboard(&game);
 
     while (1) {
-        // Fill this in
+        char buffer[BUFFER_SIZE];
+        int res;
+
+        do {
+            printf("[Client] Enter a command: ");
+            fgets(buffer, BUFFER_SIZE, stdin);
+            buffer[strlen(buffer)-1] = '\0'; //remove the \n char at the end;
+            res = send_command(&game, buffer, connfd, BLACK_PLAYER);
+        } while(res == COMMAND_ERROR || res == COMMAND_UNKNOWN || res == COMMAND_SAVE);
+
+        if(res == COMMAND_FORFEIT) {
+            printf("terminating client\n");
+            break;
+        }
+
+        int nbytes = read(connfd, buffer, BUFFER_SIZE);
+        if(nbytes <= 0) {
+            perror("[Server] read() failed.");
+            exit(EXIT_FAILURE);
+        }
+
+        if(receive_command(&game, buffer, connfd, BLACK_PLAYER) == COMMAND_FORFEIT) {
+            printf("terminating client\n");
+            break;
+        }
     }
 
     // Please ensure that the following lines of code execute just before your program terminates.
