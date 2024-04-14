@@ -43,13 +43,16 @@ int main() {
             printf("[Client] Enter a command: ");
             fgets(buffer, BUFFER_SIZE, stdin);
             buffer[strlen(buffer)-1] = '\0'; //remove the \n char at the end;
-            res = send_command(&game, buffer, connfd, BLACK_PLAYER);
+            // printf("sending from client to server: %s\n", buffer);
+            res = send_command(&game, buffer, connfd, true);
         } while(res == COMMAND_ERROR || res == COMMAND_UNKNOWN || res == COMMAND_SAVE);
 
         if(res == COMMAND_FORFEIT) {
-            printf("terminating client\n");
+            // printf("terminating client\n");
             break;
         }
+
+        memset(buffer, '\0', strlen(buffer)+1);
 
         int nbytes = read(connfd, buffer, BUFFER_SIZE);
         if(nbytes <= 0) {
@@ -57,10 +60,13 @@ int main() {
             exit(EXIT_FAILURE);
         }
 
-        if(receive_command(&game, buffer, connfd, BLACK_PLAYER) == COMMAND_FORFEIT) {
-            printf("terminating client\n");
+        // printf("client receiving from server: %s\n", buffer);
+
+        if(receive_command(&game, buffer, connfd, true) == COMMAND_FORFEIT) {
+            // printf("terminating client\n");
             break;
         }
+        memset(buffer, '\0', strlen(buffer)+1);
     }
 
     // Please ensure that the following lines of code execute just before your program terminates.

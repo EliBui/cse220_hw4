@@ -671,7 +671,6 @@ int send_command(ChessGame *game, const char *message, int socketfd, bool is_cli
         extractStr(message, arg1, index, '\0');
 
         if(save_game(game, arg1, "game_database.txt") == 0) {
-            send(socketfd, message, msgLen, 0);
             return COMMAND_SAVE;
         }
     } else {

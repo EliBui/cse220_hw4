@@ -47,6 +47,8 @@ int main() {
 
     INFO("Server accepted connection");
 
+    initialize_game(&game);
+
     while (1) {
         char buffer[BUFFER_SIZE];
         int nbytes = read(connfd, buffer, BUFFER_SIZE);
@@ -55,24 +57,31 @@ int main() {
             exit(EXIT_FAILURE);
         }
 
-        if(receive_command(&game, buffer, connfd, WHITE_PLAYER) == COMMAND_FORFEIT) {
-            printf("terminating server\n");
+        // printf("server receiving from client: %s\n", buffer);
+
+        if(receive_command(&game, buffer, connfd, false) == COMMAND_FORFEIT) {
+            // printf("terminating server\n");
             break;
         }
 
+        memset(buffer, '\0', strlen(buffer)+1);
         int res;
 
         do {
             printf("[Server] Enter a command: ");
             fgets(buffer, BUFFER_SIZE, stdin);
             buffer[strlen(buffer)-1] = '\0'; //remove the \n char at the end;
-            res = send_command(&game, buffer, connfd, WHITE_PLAYER);
+            // printf("sending from server to client: %s\n", buffer);
+            res = send_command(&game, buffer, connfd, false);
+            // display_chessboard(&game);
+            // printf("res: %d\n", res);
         } while(res == COMMAND_ERROR || res == COMMAND_UNKNOWN);
 
         if(res == COMMAND_FORFEIT) {
-            printf("terminating server\n");
+            // printf("terminating server\n");
             break;
         }
+        memset(buffer, '\0', strlen(buffer)+1);
     }
 
     close(connfd);
